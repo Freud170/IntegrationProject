@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # Port für RabbitMQ Verbindungen (AMQP)
+      - "15672:15672"    # Port für das RabbitMQ Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    networks:
+      - backend
+
+  ecommerce:
+    build: ../ecommerce
+    container_name: ecommerce_service
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+  erp:
+    build: ../erp
+    container_name: erp_service
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+  crm:
+    build: ../crm
+    container_name: crm_service
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
