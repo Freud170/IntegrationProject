@@ -1,0 +1,19 @@
+# 4. shared/protobufs/order.proto (gRPC Contract)
+
+syntax = "proto3";
+
+package order;
+
+service OrderService {
+  rpc ProcessOrder (OrderRequest) returns (OrderResponse);
+}
+
+message OrderRequest {
+  string order_id = 1;
+  int32 quantity = 2;
+}
+
+message OrderResponse {
+  string shipping_date = 1;
+  string order_status = 2;
+}
