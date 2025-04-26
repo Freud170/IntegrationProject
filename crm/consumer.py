@@ -4,6 +4,8 @@ import pika
 import json
 import logging
 
+#test
+
 logging.basicConfig(filename="../crm/logs/crm.log", level=logging.INFO)
 
 def consume_orders():
