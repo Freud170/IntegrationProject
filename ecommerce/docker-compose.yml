@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  ecommerce:
+    build: .
+    container_name: ecommerce-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@db:5432/ecommerce
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    depends_on:
+      - db
+      - rabbitmq
+    ports:
+      - "8000:8000"  # FastAPI läuft auf localhost:8000
+    restart: unless-stopped
+
+  db:
+    image: postgres:14
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # RabbitMQ Hauptport
+      - "15672:15672"    # RabbitMQ Management UI (http://localhost:15672, user: guest/guest)
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
