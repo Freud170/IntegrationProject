@@ -75,3 +75,8 @@ Alles wird über Docker Compose automatisch gestartet.
 
 - Vor dem Aufgeben einer Bestellung muss ein Produkt existieren (`product_id`).
 - RabbitMQ wird verwendet, um Statusänderungen an Bestellungen zu empfangen.
+## CRM
+TODO
+
+## ERP
+TODO
