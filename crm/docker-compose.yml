@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  crm:
+    build: .
+    container_name: crm-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@db:5432/crm
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    depends_on:
+      - db
+      - rabbitmq
+    ports:
+      - "8001:8001"  # FastAPI läuft auf localhost:8001
+    restart: unless-stopped
+
+  db:
+    image: postgres:14
+    container_name: crm-postgres-db
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"  # CRM DB läuft auf localhost:5433
+    volumes:
+      - crm_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: crm-rabbitmq
+    ports:
+      - "5673:5672"      # RabbitMQ Hauptport für CRM
+      - "15673:15672"    # RabbitMQ Management UI für CRM (http://localhost:15673, user: guest/guest)
+    restart: unless-stopped
+
+volumes:
+  crm_postgres_data:
