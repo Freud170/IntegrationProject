@@ -1,34 +1,42 @@
-# 2. erp/server.py (Person B - gRPC Server + RabbitMQ Producer)
-
 import grpc
 from concurrent import futures
-import order_pb2
-import order_pb2_grpc
-import pika
-import json
 import logging
 
-logging.basicConfig(filename="../erp/logs/erp.log", level=logging.INFO)
+from erp.services.order_service import OrderProcessor
+import erp.protos.order_pb2 as order_pb2
+import erp.protos.order_pb2_grpc as order_pb2_grpc
+
+# Logger Setup
+logging.basicConfig(filename="./logs/erp.log", level=logging.INFO)
 
 class OrderService(order_pb2_grpc.OrderServiceServicer):
+    def __init__(self):
+        self.processor = OrderProcessor()
+
     def ProcessOrder(self, request, context):
-        logging.info(f"Processing Order: {request}")
-        # Bestellung verarbeiten (Lagerbestand reduzieren etc.)
+        logging.info(f"Order erhalten: {request.order_id} mit Menge {request.quantity}")
 
-        # Nachricht an RabbitMQ senden (Lieferstatus)
-        connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-        channel = connection.channel()
-        channel.queue_declare(queue='order_status')
-        status_update = {"order_id": request.order_id, "status": "shipped"}
-        channel.basic_publish(exchange='', routing_key='order_status', body=json.dumps(status_update))
+        try:
+            # Hier m\u00fcsste man eigentlich auch das Produkt ID mit\u00fcbergeben (sp\u00e4ter verbessern)
+            shipping_date, order_status = self.processor.process_order(
+                request.order_id, "product_001", request.quantity
+            )
 
-        return order_pb2.OrderResponse(shipping_date="2025-04-15", order_status="shipped")
+            return order_pb2.OrderResponse(
+                shipping_date=shipping_date,
+                order_status=order_status
+            )
 
+        except Exception as e:
+            context.set_details(str(e))
+            context.set_code(grpc.StatusCode.INTERNAL)
+            return order_pb2.OrderResponse()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     order_pb2_grpc.add_OrderServiceServicer_to_server(OrderService(), server)
     server.add_insecure_port('[::]:50051')
+    logging.info("gRPC Server l\u00e4uft auf Port 50051...")
     server.start()
     server.wait_for_termination()
 
