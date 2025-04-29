@@ -7,7 +7,7 @@ import erp.protos.order_pb2 as order_pb2
 import erp.protos.order_pb2_grpc as order_pb2_grpc
 
 # Logger Setup
-logging.basicConfig(filename="./logs/erp.log", level=logging.INFO)
+logging.basicConfig(filename="./erp.log", level=logging.INFO)
 
 class OrderService(order_pb2_grpc.OrderServiceServicer):
     def __init__(self):
