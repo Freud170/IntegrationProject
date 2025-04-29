@@ -1,6 +1,6 @@
 # app/crud.py
 
-from app.db import async_session, Order, Product, DeliveryStatus
+from app.db import async_session, Order, Product, OrderStatus
 from app.models import OrderCreate, OrderResponse, ProductCreate
 import uuid
 import datetime
@@ -19,7 +19,7 @@ async def create_order(order: OrderCreate) -> OrderResponse:
             product_id=order.product_id,
             quantity=order.quantity,
             order_date=datetime.date.today(),
-            delivery_status=DeliveryStatus.Processing,
+            order_status=OrderStatus.Processed,
             delivery_date=datetime.date.today() + datetime.timedelta(days=5),
             payment_method=order.payment_method
         )
@@ -29,7 +29,7 @@ async def create_order(order: OrderCreate) -> OrderResponse:
         return OrderResponse(
             order_id=new_order.order_id,
             delivery_date=new_order.delivery_date,
-            delivery_status=new_order.delivery_status.value
+            order_status=new_order.order_status.value
         )
     
 async def create_product(product: ProductCreate):
@@ -58,7 +58,7 @@ async def get_order(order_id: str) -> OrderResponse:
         return OrderResponse(
             order_id=db_order.order_id,
             delivery_date=db_order.delivery_date,
-            delivery_status=db_order.delivery_status.value
+            order_status=db_order.order_status.value
         )
     
 async def get_all_products():
@@ -79,5 +79,5 @@ async def update_order_status(order_id: str, new_status: str):
     async with async_session() as session:
         db_order = await session.get(Order, order_id)
         if db_order:
-            db_order.delivery_status = DeliveryStatus(new_status)
+            db_order.order_status = OrderStatus(new_status)
             await session.commit()
