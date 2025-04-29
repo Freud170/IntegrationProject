@@ -21,7 +21,8 @@ async def create_customer_order(order: CustomerOrderCreate):
             order_id=str(uuid.uuid4()),
             customer_id=order.customer_id,
             order_date=order.order_date,
-            order_number=order.order_number
+            order_amount=order.order_amount,
+            order_status=order.order_status
         )
         session.add(new_order)
         await session.commit()
@@ -43,7 +44,8 @@ async def get_all_customers_with_orders():
                     {
                         "order_id": order.order_id,
                         "order_date": order.order_date,
-                        "order_number": order.order_number
+                        "order_amount": order.order_amount,
+                        "order_status": order.order_status
                     }
                     for order in customer.customer_orders
                 ]

@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import Column, String, Date, ForeignKey, text
+from sqlalchemy import Column, String, Date, ForeignKey, text, Integer
 import os
 
 POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/crm")
@@ -23,7 +23,8 @@ class CustomerOrder(Base):
     order_id = Column(String, primary_key=True, index=True)
     customer_id = Column(String, ForeignKey('customers.customer_id'), nullable=False)
     order_date = Column(Date, nullable=False)
-    order_number = Column(String, nullable=False)
+    order_amount = Column(String, nullable=False)
+    order_status = Column(Integer, nullable=False)
 
 async def init_db():
     async with engine.begin() as conn:
@@ -31,4 +32,5 @@ async def init_db():
         await conn.execute(text("TRUNCATE TABLE customer_orders CASCADE"))
         await conn.execute(text("TRUNCATE TABLE customers CASCADE"))
         # Tabellen neu erstellen
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
