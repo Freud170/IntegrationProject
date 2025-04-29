@@ -22,10 +22,10 @@ async_session = sessionmaker(
 Base = declarative_base()
 
 # Enum für Lieferstatus
-class DeliveryStatus(str, enum.Enum):
+class OrderStatus(str, enum.Enum):
+    Processed = "Processed"
     Shipped = "Shipped"
-    Delivered = "Delivered"
-    Processing = "Processing"
+    Cancelled = "Cancelled"
 
 # Produkt-Tabelle
 class Product(Base):
@@ -48,7 +48,7 @@ class Order(Base):
     product_id = Column(String, ForeignKey('products.product_id'), nullable=False)
     quantity = Column(Integer, nullable=False)
     order_date = Column(Date, nullable=False)
-    delivery_status = Column(Enum(DeliveryStatus), nullable=False)
+    delivery_status = Column(Enum(OrderStatus), nullable=False)
     delivery_date = Column(Date, nullable=False)
     payment_method = Column(String, nullable=False)
 
