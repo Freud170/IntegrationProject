@@ -21,7 +21,7 @@ class OrderResponse(BaseModel):
     """
     order_id: str
     delivery_date: date
-    delivery_status: str  # (Processing, Shipped oder Delivered)
+    order_status: str  # (Processed, Shipped, Cancelled)
 
 class ProductCreate(BaseModel):
     """

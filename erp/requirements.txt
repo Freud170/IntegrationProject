@@ -1,3 +1,3 @@
-pip install grpcio
-pip installgrpcio-tools
-pip install pika
+grpcio
+grpcio-tools
+pika
