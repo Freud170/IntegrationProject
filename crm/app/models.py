@@ -9,4 +9,5 @@ class CustomerCreate(BaseModel):
 class CustomerOrderCreate(BaseModel):
     customer_id: str
     order_date: date
-    order_number: str
+    order_amount: str
+    order_status: int

@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app/ app/
-COPY consumer.py consumer.py
+#COPY consumer.py consumer.py
 
 EXPOSE 8001
 
