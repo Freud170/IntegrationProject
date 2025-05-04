@@ -8,8 +8,10 @@ services:
       - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@db:5432/crm
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
     depends_on:
-      - db
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_started
     ports:
       - "8001:8001"  # FastAPI läuft auf localhost:8001
     restart: unless-stopped
@@ -34,6 +36,11 @@ services:
       - "5673:5672"      # RabbitMQ Hauptport für CRM
       - "15673:15672"    # RabbitMQ Management UI für CRM (http://localhost:15673, user: guest/guest)
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   crm_postgres_data:

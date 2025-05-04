@@ -27,7 +27,6 @@ async def create_customer_order(order: CustomerOrderCreate):
         session.add(new_order)
         await session.commit()
 
-# Richtig: Funktion ist jetzt global definiert
 async def get_all_customers_with_orders():
     async with async_session() as session:
         result = await session.execute(
