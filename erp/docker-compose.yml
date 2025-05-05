@@ -2,19 +2,16 @@ version: "3.8"
 
 services:
   erp:
-    build:
-      context: .
+    build: .
     container_name: erp_service
-    volumes:
-      - ./erp:/app
-      - ./logs:/app/logs
     ports:
       - "50051:50051"
     depends_on:
       - rabbitmq
     environment:
       - PYTHONUNBUFFERED=1
-    command: python -m server
+      - PYTHONPATH=/app
+    command: python server.py
 
   rabbitmq:
     image: rabbitmq:3-management
