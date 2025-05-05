@@ -10,7 +10,9 @@ async def create_customer(customer: CustomerCreate):
             customer_id=str(uuid.uuid4()),
             name=customer.name,
             email=customer.email,
-            address=customer.address
+            phone=customer.phone,  # Neues Feld: Phone
+            address=customer.address,
+            preferred_contact_method=customer.preferred_contact_method  # Neues Feld: PreferredContactMethod
         )
         session.add(new_customer)
         await session.commit()
@@ -38,7 +40,9 @@ async def get_all_customers_with_orders():
                 "customer_id": customer.customer_id,
                 "name": customer.name,
                 "email": customer.email,
+                "phone": customer.phone,  # Neues Feld: Phone
                 "address": customer.address,
+                "preferred_contact_method": customer.preferred_contact_method.value if customer.preferred_contact_method else None,  # Neues Feld: PreferredContactMethod
                 "orders": [
                     {
                         "order_id": order.order_id,
