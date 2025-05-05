@@ -22,7 +22,7 @@ async def consume_order_status_updates():
             await asyncio.sleep(5)  # 5 Sekunden warten und nochmal versuchen
 
     channel = await connection.channel()
-    queue = await channel.declare_queue("order_status_updates", durable=True)
+    queue = await channel.declare_queue("order_status", durable=True)
 
     print(" [*] Waiting for status updates. To exit press CTRL+C")
 
