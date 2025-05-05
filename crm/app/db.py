@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from sqlalchemy import Column, String, Date, ForeignKey, text, Integer
+from sqlalchemy import Column, String, Date, ForeignKey, text, Integer, Enum
 import os
+import enum
 
 POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/crm")
 
@@ -10,12 +11,19 @@ engine = create_async_engine(POSTGRES_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
+# Enum für PreferredContactMethod
+class PreferredContactMethod(enum.Enum):
+    Email = "Email"
+    Telefon = "Telefon"
+
 class Customer(Base):
     __tablename__ = 'customers'
     customer_id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    phone = Column(String, nullable=True)  # Neues Feld: Phone
     address = Column(String, nullable=False)
+    preferred_contact_method = Column(Enum(PreferredContactMethod), nullable=True)  # Neues Feld: PreferredContactMethod
     customer_orders = relationship("CustomerOrder", backref="customer")
 
 class CustomerOrder(Base):
