@@ -82,4 +82,26 @@ TODO
 
 ## ERP
 
-TODO
+# 🐇 RabbitMQ mit Docker Compose starten
+cd infrastructure
+docker compose up -d
+
+# 🔙 Zurück ins Projekt-Root
+cd ..
+
+# 🐍 Virtuelle Umgebung erstellen (optional, empfohlen)
+python -m venv venv
+venv\Scripts\activate         # (für Windows-Nutzer)
+
+# 📦 Abhängigkeiten installieren
+pip install grpcio grpcio-tools pika
+
+# 🛠️ gRPC-Code generieren (nur falls noch nicht vorhanden)
+python -m grpc_tools.protoc -I./protos --python_out=./erp --grpc_python_out=./erp ./protos/order.proto
+
+# 📁 logs-Verzeichnis erstellen, falls nicht vorhanden
+mkdir erp\logs
+
+# ▶️ ERP-Server starten
+python -m erp.server
+
