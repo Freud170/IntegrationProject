@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  logging:
+    build: .
+    container_name: logging-service
+    environment:
+      - RABBITMQ_URL=amqp://user:password@rabbitmq/
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+    ports:
+      - "8002:8002"  # Logging-Service API Port
+    volumes:
+      - ./logs:/app/logs  # Logs bleiben auch bestehen, wenn der Container neu gestartet wird
+      - ./app:/app/app    # Für Hot-Reloading im Entwicklungsmodus
+    restart: unless-stopped
+    networks:
+      - backend
+
+networks:
+  backend:
+    name: integrationproject_backend
+    external: true
