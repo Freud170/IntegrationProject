@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  erp:
+    build:
+      context: ./erp
+    container_name: erp_service
+    volumes:
+      - ./erp:/app
+      - ./logs:/app/logs
+    ports:
+      - "50051:50051"
+    depends_on:
+      - rabbitmq
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python -m server
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
