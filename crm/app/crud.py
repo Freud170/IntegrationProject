@@ -3,8 +3,11 @@ from app.models import CustomerCreate, CustomerOrderCreate
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 import uuid
+from datetime import datetime  
 
+# Erstelle einen neuen Kunden in der Datenbank
 async def create_customer(customer: CustomerCreate):
+
     async with async_session() as session:
         new_customer = Customer(
             customer_id=str(uuid.uuid4()),
@@ -17,26 +20,24 @@ async def create_customer(customer: CustomerCreate):
         session.add(new_customer)
         await session.commit()
 
+# Erstelle eine neue Bestellung in der Datenbank
 async def create_customer_order(order_data):
-    """
-    Fügt eine neue Bestellung für einen Kunden hinzu.
-    """
+
     async with async_session() as session:
-        # Bestellung hinzufügen
+        
         new_order = CustomerOrder(
             order_id=str(order_data["order_id"]),  
             customer_id=order_data["customer_id"],
-            order_date=order_data["order_date"],
+            order_date=datetime.strptime(order_data["order_date"], "%Y-%m-%d").date(),
             order_amount=str(order_data["order_amount"]),
             order_status=int(order_data["order_status"])
         )
         session.add(new_order)
         await session.commit()
 
+# Ändert status der Bestellung in der Datenbank
 async def update_order_status(order_id: str, new_status: int):
-    """
-    Aktualisiert den Status einer Bestellung.
-    """
+    
     async with async_session() as session:
         result = await session.execute(
             select(CustomerOrder).where(CustomerOrder.order_id == order_id)

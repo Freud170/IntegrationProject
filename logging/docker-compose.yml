@@ -10,8 +10,8 @@ services:
     ports:
       - "8002:8002"  # Logging-Service API Port
     volumes:
-      - ./logs:/app/logs  # Logs bleiben auch bestehen, wenn der Container neu gestartet wird
-      - ./app:/app/app    # Für Hot-Reloading im Entwicklungsmodus
+      - ./logs:/app/logs
+      - ./app:/app/app
     restart: unless-stopped
     networks:
       - backend

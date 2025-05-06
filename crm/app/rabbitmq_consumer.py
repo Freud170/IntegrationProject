@@ -5,10 +5,9 @@ from app import crud
 
 RABBITMQ_URL = "amqp://guest:guest@rabbitmq/"
 
+# Consumer für Bestellungen
 async def consume_order_updates():
-    """
-    Verarbeitet Nachrichten aus der Queue 'order_updates', um Bestellungen hinzuzufügen.
-    """
+
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     async with connection:
         channel = await connection.channel()
@@ -28,11 +27,9 @@ async def consume_order_updates():
                 except Exception as e:
                     print(f" [!] Error processing order: {e}")
 
-
+# Consumer für Bestellstatus-Updates
 async def consume_status_updates():
-    """
-    Verarbeitet Nachrichten aus der Queue 'order_status_updates', um den Status von Bestellungen zu aktualisieren.
-    """
+
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     async with connection:
         channel = await connection.channel()
@@ -52,7 +49,7 @@ async def consume_status_updates():
                 except Exception as e:
                     print(f" [!] Error processing status update: {e}")
 
-
+# Loop für die Consumer
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(consume_order_updates())
