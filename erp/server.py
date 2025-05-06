@@ -2,9 +2,9 @@ import grpc
 from concurrent import futures
 import logging
 
-from erp.services.order_service import OrderProcessor
-import erp.protos.order_pb2 as order_pb2
-import erp.protos.order_pb2_grpc as order_pb2_grpc
+from services.order_service import OrderProcessor
+import protos.order_pb2 as order_pb2
+import protos.order_pb2_grpc as order_pb2_grpc
 
 # Logger Setup
 logging.basicConfig(filename="./erp/logs/.keep", level=logging.INFO)

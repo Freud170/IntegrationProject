@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg
+aio-pika
+grpcio
+grpcio-tools
+pika
+pydantic
+pydantic[email]
+python-dotenv
+email-validator
