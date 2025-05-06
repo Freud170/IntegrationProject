@@ -10,7 +10,7 @@ services:
       - rabbitmq
     environment:
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/erp
     command: python server.py
 
   rabbitmq:
