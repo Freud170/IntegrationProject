@@ -5,7 +5,7 @@ from sqlalchemy import Column, String, Date, ForeignKey, text, Integer, Enum
 import os
 import enum
 
-POSTGRES_URL = os.getenv("POSTGRES_URL_CRM" ,"postgresql+asyncpg://postgres:postgres@crm-db:5432/crm")
+POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/crm")
 
 engine = create_async_engine(POSTGRES_URL, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

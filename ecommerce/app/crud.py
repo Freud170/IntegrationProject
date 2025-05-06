@@ -81,3 +81,20 @@ async def update_order_status(order_id: str, new_status: str):
         if db_order:
             db_order.order_status = OrderStatus(new_status)
             await session.commit()
+
+async def get_order_details(order_id: str):
+    """
+    Fetches order details from the database for a given order ID.
+    Returns a dictionary with OrderID, OrderDate, TotalAmount, and Status.
+    """
+    async with async_session() as session:
+        db_order = await session.get(Order, order_id)
+        if db_order is None:
+            return None
+
+        return {
+            "OrderID": db_order.order_id,
+            "OrderDate": db_order.order_date,
+            "TotalAmount": db_order.quantity * db_order.product.price,  # Assuming a relationship exists
+            "Status": db_order.order_status.value
+        }

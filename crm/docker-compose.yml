@@ -5,7 +5,7 @@ services:
     build: .
     container_name: crm-service
     environment:
-      - POSTGRES_URL_CRM=postgresql+asyncpg://postgres:postgres@db:5432/crm
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@db:5432/crm
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
     depends_on:
       rabbitmq:

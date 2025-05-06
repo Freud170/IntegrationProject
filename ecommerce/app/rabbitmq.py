@@ -63,7 +63,7 @@ async def consume_order_status_updates():
                     print(f" [✔] Updated order {order_id} to status {new_status}")
 
                     # Fetch additional order details from the database
-                    order_details = await get_order_details(order_id)  # Assuming this function exists
+                    order_details = await get_order_details(order_id)
                     await publish_order_update(
                         order_id=order_details["OrderID"],
                         order_date=order_details["OrderDate"],
