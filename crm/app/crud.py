@@ -10,24 +10,41 @@ async def create_customer(customer: CustomerCreate):
             customer_id=str(uuid.uuid4()),
             name=customer.name,
             email=customer.email,
-            phone=customer.phone,  # Neues Feld: Phone
+            phone=customer.phone,  
             address=customer.address,
-            preferred_contact_method=customer.preferred_contact_method  # Neues Feld: PreferredContactMethod
+            preferred_contact_method=customer.preferred_contact_method  
         )
         session.add(new_customer)
         await session.commit()
 
-async def create_customer_order(order: CustomerOrderCreate):
+async def create_customer_order(order_data):
+    """
+    Fügt eine neue Bestellung für einen Kunden hinzu.
+    """
     async with async_session() as session:
+        # Bestellung hinzufügen
         new_order = CustomerOrder(
-            order_id=str(uuid.uuid4()),
-            customer_id=order.customer_id,
-            order_date=order.order_date,
-            order_amount=order.order_amount,
-            order_status=order.order_status
+            order_id=str(order_data["order_id"]),  
+            customer_id=order_data["customer_id"],
+            order_date=order_data["order_date"],
+            order_amount=str(order_data["order_amount"]),
+            order_status=int(order_data["order_status"])
         )
         session.add(new_order)
         await session.commit()
+
+async def update_order_status(order_id: str, new_status: int):
+    """
+    Aktualisiert den Status einer Bestellung.
+    """
+    async with async_session() as session:
+        result = await session.execute(
+            select(CustomerOrder).where(CustomerOrder.order_id == order_id)
+        )
+        order = result.scalar_one_or_none()
+        if order:
+            order.order_status = new_status
+            await session.commit()
 
 async def get_all_customers_with_orders():
     async with async_session() as session:
@@ -40,9 +57,9 @@ async def get_all_customers_with_orders():
                 "customer_id": customer.customer_id,
                 "name": customer.name,
                 "email": customer.email,
-                "phone": customer.phone,  # Neues Feld: Phone
+                "phone": customer.phone,  
                 "address": customer.address,
-                "preferred_contact_method": customer.preferred_contact_method.value if customer.preferred_contact_method else None,  # Neues Feld: PreferredContactMethod
+                "preferred_contact_method": customer.preferred_contact_method.value if customer.preferred_contact_method else None,  
                 "orders": [
                     {
                         "order_id": order.order_id,

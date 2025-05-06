@@ -3,7 +3,7 @@ from app.models import CustomerCreate, CustomerOrderCreate
 from app import crud, db
 import asyncio
 from app.crud import get_all_customers_with_orders
-from app.rabbitmq_consumer import consume_order_updates  # Importiere den Consumer
+from app.rabbitmq_consumer import consume_order_updates, consume_status_updates  # Importiere den Consumer
 
 app = FastAPI()
 loop = asyncio.get_event_loop()
@@ -11,7 +11,9 @@ loop = asyncio.get_event_loop()
 @app.on_event("startup")
 async def startup_event():
     await db.init_db()
-    loop.create_task(consume_order_updates())  # Starte den RabbitMQ-Consumer
+    # Startet die RabbitMQ-Consumer
+    loop.create_task(consume_order_updates())
+    loop.create_task(consume_status_updates())
 
 @app.post("/customers")
 async def create_customer(customer: CustomerCreate):

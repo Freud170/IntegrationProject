@@ -10,12 +10,13 @@ class PreferredContactMethod(str, Enum):
 class CustomerCreate(BaseModel):
     name: str
     email: EmailStr
-    phone: Optional[str]  # Neues Feld: Phone
+    phone: Optional[str]  
     address: str
-    preferred_contact_method: Optional[PreferredContactMethod]  # Neues Feld: PreferredContactMethod
+    preferred_contact_method: Optional[PreferredContactMethod]  
 
 class CustomerOrderCreate(BaseModel):
+    order_id: str  
     customer_id: str
-    order_date: date
+    order_date: str
     order_amount: str
     order_status: int
