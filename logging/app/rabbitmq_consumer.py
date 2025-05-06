@@ -1,0 +1,122 @@
+import json
+import asyncio
+import logging
+from typing import Optional, Dict, Any
+import aio_pika
+from .logger import async_logger
+
+class LoggingRabbitMQConsumer:
+    """
+    RabbitMQ-Konsument für den Logging-Service.
+    Empfängt Nachrichten von allen Services und protokolliert sie zentral.
+    """
+    
+    def __init__(self, rabbitmq_url: str = "amqp://guest:guest@rabbitmq/"):
+        """
+        Initialisiert den RabbitMQ-Konsumenten.
+        
+        :param rabbitmq_url: URL zur RabbitMQ-Instanz
+        """
+        self.rabbitmq_url = rabbitmq_url
+        self.connection = None
+        self.channel = None
+        self._ready = asyncio.Event()
+        self._stopping = False
+        self._reconnect_delay = 5.0  # Verzögerung in Sekunden vor dem Wiederverbinden
+        self._logger = logging.getLogger("logging_service.rabbitmq")
+    
+    async def connect(self) -> None:
+        """Stellt eine Verbindung zu RabbitMQ her."""
+        try:
+            self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
+            self.channel = await self.connection.channel()
+            await self.channel.set_qos(prefetch_count=10)
+            self._ready.set()
+            self._logger.info("Verbindung zu RabbitMQ hergestellt")
+        except Exception as e:
+            self._logger.error(f"Fehler beim Verbinden mit RabbitMQ: {str(e)}")
+            self._ready.clear()
+            if not self._stopping:
+                asyncio.create_task(self._reconnect())
+    
+    async def _reconnect(self) -> None:
+        """Versucht, die Verbindung zu RabbitMQ wiederherzustellen."""
+        await asyncio.sleep(self._reconnect_delay)
+        await self.connect()
+    
+    async def setup_queues(self) -> None:
+        """Richtet die Warteschlangen für das Logging ein."""
+        await self._ready.wait()
+        
+        # Warteschlange für System-Interaktionslogs
+        await self.channel.declare_queue(
+            "system_interactions_logs",
+            durable=True
+        )
+    
+    async def consume_logs(self) -> None:
+        """
+        Verarbeitet eingehende Lognachrichten von allen Services.
+        """
+        await self._ready.wait()
+        
+        # Queue für System-Interaktionen deklarieren
+        queue = await self.channel.declare_queue(
+            "system_interactions_logs",
+            durable=True
+        )
+        
+        async def process_message(message: aio_pika.IncomingMessage) -> None:
+            """
+            Verarbeitet eine eingehende Nachricht und protokolliert sie.
+            
+            :param message: Die eingehende RabbitMQ-Nachricht
+            """
+            async with message.process():
+                try:
+                    body = message.body.decode('utf-8')
+                    log_data = json.loads(body)
+                    
+                    # Extrahieren der relevanten Felder
+                    source_system = log_data.get('source_system', 'unknown')
+                    target_system = log_data.get('target_system', 'unknown')
+                    interaction_type = log_data.get('interaction_type', 'unknown')
+                    message_content = log_data.get('message', {})
+                    status = log_data.get('status', 'SUCCESS')
+                    error_message = log_data.get('error_message')
+                    
+                    # Asynchron protokollieren
+                    await async_logger.log_interaction(
+                        source_system=source_system,
+                        target_system=target_system,
+                        interaction_type=interaction_type,
+                        message=message_content,
+                        status=status,
+                        error_message=error_message
+                    )
+                    
+                    self._logger.debug(f"Nachricht protokolliert: {source_system} -> {target_system}")
+                except json.JSONDecodeError:
+                    self._logger.error("Fehler beim Dekodieren der JSON-Nachricht")
+                except Exception as e:
+                    self._logger.error(f"Fehler bei der Verarbeitung der Nachricht: {str(e)}")
+        
+        # Nachrichten asynchron verarbeiten
+        await queue.consume(process_message)
+        self._logger.info("Log-Konsument gestartet")
+    
+    async def start(self) -> None:
+        """Startet den RabbitMQ-Konsumenten."""
+        await self.connect()
+        await self.setup_queues()
+        await self.consume_logs()
+    
+    async def stop(self) -> None:
+        """Stoppt den RabbitMQ-Konsumenten."""
+        self._stopping = True
+        if self.connection:
+            await self.connection.close()
+        self._logger.info("RabbitMQ-Konsument gestoppt")
+
+# Erstellen einer Singleton-Instanz
+rabbitmq_consumer = LoggingRabbitMQConsumer()
