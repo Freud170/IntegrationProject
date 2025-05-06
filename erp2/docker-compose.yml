@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  erp2:
+    build: .
+    container_name: erp2-service
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/erp2
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+      - GRPC_HOST=0.0.0.0
+      - GRPC_PORT=50051
+    ports:
+      - "50051:50051"  # gRPC port
+    volumes:
+      - ./logs:/app/logs  # Mount logs directory
+    depends_on:
+      - db
+      - rabbitmq
+    networks:
+      - erp_network
+      - backend  # For communication with other services
+    restart: unless-stopped
+
+  db:
+    image: postgres:14
+    container_name: erp2-postgres
+    environment:
+      - POSTGRES_DB=erp2
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - erp2_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"  # Map to 5434 to avoid conflicts with other Postgres instances
+    networks:
+      - erp_network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: erp2-rabbitmq
+    ports:
+      - "5674:5672"      # RabbitMQ port for ERP2 (to avoid conflicts)
+      - "15674:15672"    # RabbitMQ management UI for ERP2
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - erp2_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - erp_network
+      - backend  # For communication with other services
+    restart: unless-stopped
+
+volumes:
+  erp2_postgres_data:
+  erp2_rabbitmq_data:
+
+networks:
+  erp_network:
+    driver: bridge
+  backend:
+    name: integrationproject_backend
+    external: true  # Use the existing backend network from the infrastructure
