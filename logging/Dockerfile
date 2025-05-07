@@ -1,12 +1,28 @@
-FROM python:3.13-slim
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
 
+# Set the working directory in the container
 WORKDIR /app
 
-COPY requirements.txt .
+# Install system dependencies needed for building Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app/ app/
+# Make port 50051 available to the world outside this container
+EXPOSE 50051
 
-EXPOSE 8002
+# Define environment variable
+ENV RABBITMQ_HOST=localhost
+ENV GRPC_PORT=50051
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+# Run event_logger.py when the container launches
+CMD ["python", "event_logger.py"]
