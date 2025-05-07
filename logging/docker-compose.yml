@@ -1,20 +1,45 @@
 version: '3.8'
 
 services:
-  logging-server:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: logging-rabbitmq
+    ports:
+      - "5672:5672"   # RabbitMQ Standard Port
+      - "15672:15672" # Management Interface
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  logging:
     build: .
     container_name: logging_server
     environment:
-      - RABBITMQ_HOST=rabbitmq
-      - GRPC_PORT=50051
-    ports:
-      - "50051:50051"
+      - RABBITMQ_URL=amqp://user:password@rabbitmq/
+    command: ["python", "app/simple_logging_consumer.py"]
+    volumes:
+      - ./logs:/app/logs  # Logs bleiben auch bestehen, wenn der Container neu gestartet wird
+      - ./app:/app/app    # Für Hot-Reloading im Entwicklungsmodus
+    restart: unless-stopped
+    networks:
+      - backend
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+networks:
+  backend:
+    name: integrationproject_backend
+    external: true
+
+volumes:
+  rabbitmq_data:

@@ -9,6 +9,13 @@ import protos.order_pb2_grpc as order_pb2_grpc
 # Logger Setup
 logging.basicConfig(filename="./erp/logs/.keep", level=logging.INFO)
 
+# class LoggingInterceptor(grpc.ServerInterceptor):
+#     def intercept_service(self, continuation, handler_call_details):
+#         logging.info(f"gRPC Anfrage: {handler_call_details.method}")
+#         response = continuation(handler_call_details)
+#         logging.info(f"gRPC Antwort: {response}")
+#         return response
+
 class OrderService(order_pb2_grpc.OrderServiceServicer):
     def __init__(self):
         self.processor = OrderProcessor()
@@ -34,9 +41,14 @@ class OrderService(order_pb2_grpc.OrderServiceServicer):
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    
+    # server = grpc.server(
+    #     futures.ThreadPoolExecutor(max_workers=10),
+    #     interceptors=[LoggingInterceptor()]
+    # )
     order_pb2_grpc.add_OrderServiceServicer_to_server(OrderService(), server)
     server.add_insecure_port('[::]:50051')
-    logging.info("gRPC Server l\u00e4uft auf Port 50051...")
+    logging.info("gRPC Server läuft auf Port 50051...")
     server.start()
     server.wait_for_termination()
 
