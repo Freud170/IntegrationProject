@@ -31,7 +31,8 @@ async def create_order(order: OrderCreate):
             order_id=created_order.order_id,
             order_date=created_order.order_date,
             total_amount=created_order.total_amount,
-            status=created_order.status
+            status=created_order.status,
+            customer_id=order.customer_id
         )
 
         return created_order

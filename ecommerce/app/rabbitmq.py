@@ -8,21 +8,22 @@ from app.crud import update_order_status, get_order_details  # Import the missin
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 
-async def publish_order_update(order_id, order_date, total_amount, status):
+async def publish_order_update(order_id, order_date, total_amount, status, customer_id):
     """
     Publishes an order update message to the "order_updates" queue.
     """
     try:
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         channel = await connection.channel()
-        
+
         message = {
             "OrderID": order_id,
             "OrderDate": order_date,
             "TotalAmount": total_amount,
-            "Status": status
+            "Status": status,
+            "CustomerID": customer_id
         }
-        
+
         await channel.default_exchange.publish(
             aio_pika.Message(body=json.dumps(message).encode()),
             routing_key="order_updates"
@@ -68,7 +69,8 @@ async def consume_order_status_updates():
                         order_id=order_details["OrderID"],
                         order_date=order_details["OrderDate"],
                         total_amount=order_details["TotalAmount"],
-                        status=new_status
+                        status=new_status,
+                        customer_id=order_details["CustomerID"]
                     )
                 except Exception as e:
                     print(f" [!] Error processing message: {e}")
