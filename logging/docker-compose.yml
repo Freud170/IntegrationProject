@@ -1,15 +1,15 @@
-version: '3.8'
+version: "3.9"
 
 services:
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: logging-rabbitmq
+    container_name: rabbitmq
     ports:
       - "5672:5672"   # RabbitMQ Standard Port
       - "15672:15672" # Management Interface
     environment:
-      - RABBITMQ_DEFAULT_USER=user
-      - RABBITMQ_DEFAULT_PASS=password
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -22,13 +22,15 @@ services:
 
   logging:
     build: .
-    container_name: logging_server
+    container_name: logging-service
     environment:
-      - RABBITMQ_URL=amqp://user:password@rabbitmq/
-    command: ["python", "app/simple_logging_consumer.py"]
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    command: ["python", "event_logger.py"]
     volumes:
-      - ./logs:/app/logs  # Logs bleiben auch bestehen, wenn der Container neu gestartet wird
+      - ./logs:/app/logs
       - ./app:/app/app    # Für Hot-Reloading im Entwicklungsmodus
+    ports:
+      - "8002:8002"
     restart: unless-stopped
     networks:
       - backend
