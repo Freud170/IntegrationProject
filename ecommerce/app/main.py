@@ -25,6 +25,15 @@ async def create_order(order: OrderCreate):
     """
     try:
         created_order = await crud.create_order(order)
+
+        # Publish the order update to RabbitMQ
+        await rabbitmq.publish_order_update(
+            order_id=created_order.order_id,
+            order_date=created_order.order_date,
+            total_amount=created_order.total_amount,
+            status=created_order.status
+        )
+
         return created_order
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

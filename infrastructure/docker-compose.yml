@@ -54,6 +54,16 @@ services:
     networks:
       - backend
 
+  erp2:
+    build: ../erp2
+    container_name: erp2_service
+    depends_on:
+      - rabbitmq
+    networks:
+      - backend
+    ports:
+      - "50052:50052"
+
 networks:
   backend:
     driver: bridge
