@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  erp2:
+  erp:
     build: .
     container_name: erp_service
     ports:

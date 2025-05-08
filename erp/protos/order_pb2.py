@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0border.proto\x12\x04\x65rp2\"F\n\x0cOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x12\n\nproduct_id\x18\x02 \x01(\t\x12\x10\n\x08quantity\x18\x03 \x01(\x05\"<\n\rOrderResponse\x12\x15\n\rshipping_date\x18\x01 \x01(\t\x12\x14\n\x0corder_status\x18\x02 \x01(\t2G\n\x0cOrderService\x12\x37\n\x0cProcessOrder\x12\x12.erp2.OrderRequest\x1a\x13.erp2.OrderResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0border.proto\x12\x04\x65rp2\"F\n\x0cOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x12\n\nproduct_id\x18\x02 \x01(\t\x12\x10\n\x08quantity\x18\x03 \x01(\x05\"<\n\rOrderResponse\x12\x15\n\rshipping_date\x18\x01 \x01(\t\x12\x14\n\x0corder_status\x18\x02 \x01(\t2G\n\x0cOrderService\x12\x37\n\x0cProcessOrder\x12\x12.erp.OrderRequest\x1a\x13.erp.OrderResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
