@@ -3,6 +3,7 @@ from app.models import CustomerCreate, CustomerOrderCreate
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload
 import uuid
+import datetime
 
 async def create_customer(customer: CustomerCreate):
     async with async_session() as session:
@@ -26,7 +27,7 @@ async def create_customer_order(order_data):
         new_order = CustomerOrder(
             order_id=str(order_data["order_id"]),  
             customer_id=order_data["customer_id"],
-            order_date=order_data["order_date"],
+            order_date=datetime.datetime.strptime(order_data["order_date"], "%Y-%m-%d").date(),
             order_amount=str(order_data["order_amount"]),
             order_status=int(order_data["order_status"])
         )

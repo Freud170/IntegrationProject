@@ -30,7 +30,7 @@ class CustomerOrder(Base):
     __tablename__ = 'customer_orders'
     order_id = Column(String, primary_key=True, index=True)
     customer_id = Column(String, ForeignKey('customers.customer_id'), nullable=False)
-    order_date = Column(String,nullable=False)
+    order_date = Column(Date,nullable=False)
     order_amount = Column(String, nullable=False)
     order_status = Column(Integer, nullable=False)
 
@@ -38,7 +38,6 @@ async def init_db():
     async with engine.begin() as conn:
         # Tabellen leeren
         await conn.execute(text("TRUNCATE TABLE customer_orders"))
-        await conn.execute(text("TRUNCATE TABLE customers CASCADE"))
         # Tabellen neu erstellen
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

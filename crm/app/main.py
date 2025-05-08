@@ -12,8 +12,8 @@ loop = asyncio.get_event_loop()
 async def startup_event():
     await db.init_db()
     # Startet die RabbitMQ-Consumer
-    loop.create_task(consume_order_updates())
     loop.create_task(consume_status_updates())
+    loop.create_task(consume_order_updates())
 
 @app.post("/customers")
 async def create_customer(customer: CustomerCreate):
