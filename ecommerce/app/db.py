@@ -55,29 +55,5 @@ class Order(Base):
 
 # DB Initialisierung (Tabellen erstellen)
 async def init_db():
-    """
-    Initializes the database by creating necessary tables if they do not exist.
-    """
-    conn = await asyncpg.connect(dsn=os.getenv("DATABASE_URL"))
-    try:
-        await conn.execute("""
-        CREATE TABLE IF NOT EXISTS orders (
-            order_id SERIAL PRIMARY KEY,
-            customer_id INT NOT NULL,
-            order_date TIMESTAMP NOT NULL,
-            total_amount NUMERIC NOT NULL,
-            status VARCHAR(50) NOT NULL
-        );
-        """)
-        await conn.execute("""
-        CREATE TABLE IF NOT EXISTS products (
-            product_id SERIAL PRIMARY KEY,
-            product_name VARCHAR(255) NOT NULL,
-            category VARCHAR(255),
-            price NUMERIC NOT NULL,
-            stock_quantity INT NOT NULL
-        );
-        """)
-        print("[✔] Database initialized successfully.")
-    finally:
-        await conn.close()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
