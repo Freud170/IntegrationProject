@@ -5,52 +5,45 @@ from app import crud
 
 RABBITMQ_URL = "amqp://guest:guest@rabbitmq/"
 
+#Consumer für Bestell-Updates
 async def consume_order_updates():
-    """
-    Verarbeitet Nachrichten aus der Queue 'order_updates', um Bestellungen hinzuzufügen.
-    """
-    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    connection = await aio_pika.connect_robust(RABBITMQ_URL, timeout=None)
     async with connection:
         channel = await connection.channel()
         order_queue = await channel.declare_queue("order_updates", durable=True)
-        print(" [*] Waiting for order updates. To exit press CTRL+C")
 
         async for message in order_queue:
             async with message.process():
                 try:
-                    print(f" [x] Received order: {message.body.decode()}")
+                    print(f" Bestellung Empfangen: {message.body.decode()}")
                     order_data = json.loads(message.body)
 
                     # Bestellung in der Datenbank hinzufügen
                     await crud.create_customer_order(order_data)
 
-                    print(f" [✔] Order added successfully for customer {order_data['customer_id']}")
+                    print(f" Bestellung wurde Kunde zugewiesen {order_data['customer_id']}")
                 except Exception as e:
-                    print(f" [!] Error processing order: {e}")
+                    print(f" Fehler bei der Bearbeirung {e}")
 
-
+#Consumer für Status-Updates
 async def consume_status_updates():
-    """
-    Verarbeitet Nachrichten aus der Queue 'order_status_updates', um den Status von Bestellungen zu aktualisieren.
-    """
-    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    connection = await aio_pika.connect_robust(RABBITMQ_URL,timeout=None)
     async with connection:
         channel = await connection.channel()
         status_queue = await channel.declare_queue("order_status_updates", durable=True)
-        print(" [*] Waiting for status updates. To exit press CTRL+C")
 
         async for message in status_queue:
             async with message.process():
                 try:
-                    print(f" [x] Received status update: {message.body.decode()}")
+                    print(f" Stsus Update Empfangen: {message.body.decode()}")
                     status_data = json.loads(message.body)
 
                     # Status der Bestellung in der Datenbank aktualisieren
                     await crud.update_order_status(status_data["order_id"], status_data["status"])
 
-                    print(f" [✔] Status updated for order {status_data['order_id']}")
+                    print(f" Status Update erfolgreich: {status_data['order_id']}")
                 except Exception as e:
-                    print(f" [!] Error processing status update: {e}")
+                    print(f" Fehler: {e}")
 
 
 if __name__ == "__main__":

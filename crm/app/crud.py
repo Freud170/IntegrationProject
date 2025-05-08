@@ -19,9 +19,6 @@ async def create_customer(customer: CustomerCreate):
         await session.commit()
 
 async def create_customer_order(order_data):
-    """
-    Fügt eine neue Bestellung für einen Kunden hinzu.
-    """
     async with async_session() as session:
         # Bestellung hinzufügen
         new_order = CustomerOrder(
@@ -35,9 +32,6 @@ async def create_customer_order(order_data):
         await session.commit()
 
 async def update_order_status(order_id: str, new_status: int):
-    """
-    Aktualisiert den Status einer Bestellung.
-    """
     async with async_session() as session:
         result = await session.execute(
             select(CustomerOrder).where(CustomerOrder.order_id == order_id)

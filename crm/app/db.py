@@ -36,8 +36,18 @@ class CustomerOrder(Base):
 
 async def init_db():
     async with engine.begin() as conn:
-        # Tabellen leeren
-        await conn.execute(text("TRUNCATE TABLE customer_orders"))
+
         # Tabellen neu erstellen
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+
+        # Einfügen von Testdaten
+        await conn.execute(text("""
+            INSERT INTO customers (customer_id, name, email, phone, address, preferred_contact_method)
+            VALUES ('1', 'Max Mustermann', 'max.mustermann@example.com', '123456789', 'Musterstraße 1, 12345 Musterstadt', 'Email')
+        """))
+
+        await conn.execute(text("""
+            INSERT INTO customers (customer_id, name, email, phone, address, preferred_contact_method)
+            VALUES ('2', 'Erika Musterfrau', 'erika.musterfrau@example.com', '987654321', 'Beispielweg 2, 54321 Beispielstadt', 'Telefon')
+        """))
