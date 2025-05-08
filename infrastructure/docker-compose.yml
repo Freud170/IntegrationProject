@@ -55,7 +55,7 @@ services:
       - backend
 
   erp2:
-    build: ../erp2
+    build: ../erp
     container_name: erp2_service
     depends_on:
       - rabbitmq

@@ -1,21 +1,20 @@
 version: "3.8"
 
 services:
-  erp:
+  erp2:
     build: .
     container_name: erp_service
     ports:
-      - "50051:50051"
+      - "50052:50052"
     depends_on:
       - rabbitmq
     environment:
       - PYTHONUNBUFFERED=1
-      - PYTHONPATH=/app/erp
     command: python server.py
 
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq2
+    container_name: rabbitmq-erp
     ports:
       - "5672:5672"
       - "15672:15672"

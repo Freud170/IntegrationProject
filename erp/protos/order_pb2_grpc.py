@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import erp.protos.order_pb2 as order__pb2
+import order_pb2 as order__pb2
 
 GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
@@ -35,7 +35,7 @@ class OrderServiceStub(object):
             channel: A grpc.Channel.
         """
         self.ProcessOrder = channel.unary_unary(
-                '/erp.protos.order.OrderService/ProcessOrder',
+                '/erp2.OrderService/ProcessOrder',
                 request_serializer=order__pb2.OrderRequest.SerializeToString,
                 response_deserializer=order__pb2.OrderResponse.FromString,
                 _registered_method=True)
@@ -60,9 +60,9 @@ def add_OrderServiceServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'erp.protos.order.OrderService', rpc_method_handlers)
+            'erp2.OrderService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('erp.protos.order.OrderService', rpc_method_handlers)
+    server.add_registered_method_handlers('erp2.OrderService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -83,7 +83,7 @@ class OrderService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/erp.protos.order.OrderService/ProcessOrder',
+            '/erp2.OrderService/ProcessOrder',
             order__pb2.OrderRequest.SerializeToString,
             order__pb2.OrderResponse.FromString,
             options,
