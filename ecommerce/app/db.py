@@ -6,7 +6,6 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, String, Integer, Date, Enum, DECIMAL, ForeignKey
 import enum
 import os
-import asyncpg
 
 # ENV Variablen (Postgres URL)
 POSTGRES_URL = os.getenv("POSTGRES_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/ecommerce")
