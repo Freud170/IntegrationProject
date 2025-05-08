@@ -99,6 +99,6 @@ async def get_order_details(order_id: str):
         return {
             "OrderID": db_order.order_id,
             "OrderDate": db_order.order_date,
-            "TotalAmount": db_order.quantity * db_order.product.price,  # Assuming a relationship exists
+            "TotalAmount": db_order.quantity * db_order.product.price,
             "Status": db_order.order_status.value
         }

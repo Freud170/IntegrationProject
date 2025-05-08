@@ -3,7 +3,9 @@
 from fastapi import FastAPI, HTTPException
 from app.models import OrderCreate, OrderResponse, ProductCreate
 from app import crud, rabbitmq, db
+from app.db import Order, async_session
 import asyncio
+from sqlalchemy import select
 
 # FastAPI-Instanz
 app = FastAPI()
@@ -82,5 +84,32 @@ async def read_products():
             }
             for p in products
         ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/orders")
+async def get_all_orders():
+    """
+    REST-Endpunkt: Gibt alle Bestellungen zurück.
+    """
+    try:
+        async with async_session() as session:
+            result = await session.execute(select(Order))
+            orders = result.scalars().all()
+            return [
+                {
+                    "order_id": order.order_id,
+                    "customer_id": order.customer_id,
+                    "email": order.email,
+                    "address": order.address,
+                    "product_id": order.product_id,
+                    "quantity": order.quantity,
+                    "order_date": order.order_date,
+                    "order_status": order.order_status.value,
+                    "delivery_date": order.delivery_date,
+                    "payment_method": order.payment_method
+                }
+                for order in orders
+            ]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
