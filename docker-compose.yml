@@ -1,0 +1,122 @@
+version: "3.9"
+
+services:
+  # --- E-Commerce Service ---
+  ecommerce:
+    build: ./ecommerce
+    container_name: ecommerce-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@ecommerce-db:5432/ecommerce
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - ecommerce-db
+      - rabbitmq
+    ports:
+      - "8000:8000"  # E-Commerce Service läuft auf localhost:8000
+    restart: unless-stopped
+
+  ecommerce-db:
+    image: postgres:14
+    container_name: ecommerce-db
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ecommerce_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- CRM Service ---
+  crm:
+    build: ./crm
+    container_name: crm-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@crm-db:5432/crm
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - crm-db
+      - rabbitmq
+    ports:
+      - "8001:8001"  # CRM Service läuft auf localhost:8001
+    restart: unless-stopped
+
+  crm-db:
+    image: postgres:14
+    container_name: crm-db
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"  # CRM DB läuft auf localhost:5433
+    volumes:
+      - crm_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- ERP Service ---
+  erp:
+    build: ./erp
+    container_name: erp-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@erp-db:5432/erp
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - erp-db
+      - rabbitmq
+    ports:
+      - "8002:8002"  # ERP Service läuft auf localhost:8002
+      - "50052:50052"  # Hier wird der Port 50052 ausgeliefert
+
+    command: python server.py
+    restart: unless-stopped
+
+  erp-db:
+    image: postgres:14
+    container_name: erp-db
+    environment:
+      POSTGRES_DB: erp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"  # ERP DB läuft auf localhost:5434
+    volumes:
+      - erp_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # --- Gemeinsamer RabbitMQ Service ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      # RabbitMQ Hauptport
+      - "15672:15672"    # RabbitMQ Management UI (http://localhost:15672, user: guest/guest)
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Optional: pgAdmin für alle Datenbanken ---
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - crm-db
+      - ecommerce-db
+      - erp-db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+volumes:
+  ecommerce_postgres_data:
+  crm_postgres_data:
+  erp_postgres_data:
+  pgadmin_data:

@@ -27,10 +27,39 @@ class OrderService(order_pb2_grpc.OrderServiceServicer):
                 order_status=order_status
             )
 
+<<<<<<< Updated upstream
         except Exception as e:
             context.set_details(str(e))
             context.set_code(grpc.StatusCode.INTERNAL)
             return order_pb2.OrderResponse()
+=======
+        self.publish_status_update(request.order_id, order_status)
+
+        return OrderResponse(
+            shipping_date=shipping_date,
+            order_status=order_status
+        )
+
+    def publish_status_update(self, order_id, status):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq", port=5672))
+        channel = connection.channel()
+        channel.queue_declare(queue='order_status_update', durable=True)
+
+        message = {
+            "order_id": order_id,
+            "status": status
+        }
+
+        channel.basic_publish(
+            exchange='',
+            routing_key='order_status_update',
+            body=json.dumps(message)
+        )
+
+        connection.close()
+
+        logging.info(f"Published status update for order {order_id}: {status}")
+>>>>>>> Stashed changes
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -41,4 +70,8 @@ def serve():
     server.wait_for_termination()
 
 if __name__ == "__main__":
+<<<<<<< Updated upstream
+=======
+    logging.basicConfig(level=logging.INFO)
+>>>>>>> Stashed changes
     serve()
