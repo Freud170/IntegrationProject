@@ -20,8 +20,10 @@ class OrderResponse(BaseModel):
     Antwort-Body nach Erstellen oder Abrufen einer Bestellung.
     """
     order_id: str
+    order_date: date
     delivery_date: date
-    order_status: str  # (Processed, Shipped, Cancelled)
+    total_amount: int
+    status: str  # (Processed, Shipped, Cancelled)
 
 class ProductCreate(BaseModel):
     """

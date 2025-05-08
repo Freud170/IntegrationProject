@@ -1,44 +1,76 @@
 import grpc
 from concurrent import futures
 import logging
+from datetime import datetime
+import pika
+import sys
+import os
+import json
 
-from services.order_service import OrderProcessor
-import protos.order_pb2 as order_pb2
-import protos.order_pb2_grpc as order_pb2_grpc
+# Add the protos directory to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'protos'))
 
-# Logger Setup
-logging.basicConfig(filename="./erp/logs/.keep", level=logging.INFO)
+from protos.order_pb2 import OrderResponse
+from protos.order_pb2_grpc import OrderServiceServicer, add_OrderServiceServicer_to_server
 
-class OrderService(order_pb2_grpc.OrderServiceServicer):
+class OrderService(OrderServiceServicer):
     def __init__(self):
-        self.processor = OrderProcessor()
+        self.stock_db = {
+            "product_001": {"name": "Product 1", "stock": 100},
+            "product_002": {"name": "Product 2", "stock": 50}
+        }
 
     def ProcessOrder(self, request, context):
-        logging.info(f"Order erhalten: {request.order_id} mit Menge {request.quantity}")
+        product = self.stock_db.get(request.product_id)
+        if not product:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details("Product not found")
+            return OrderResponse()
 
-        try:
-            # Hier m\u00fcsste man eigentlich auch das Produkt ID mit\u00fcbergeben (sp\u00e4ter verbessern)
-            shipping_date, order_status = self.processor.process_order(
-                request.order_id, "product_001", request.quantity
-            )
+        if product['stock'] < request.quantity:
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details("Insufficient stock")
+            return OrderResponse()
 
-            return order_pb2.OrderResponse(
-                shipping_date=shipping_date,
-                order_status=order_status
-            )
+        product['stock'] -= request.quantity
+        shipping_date = datetime.now().strftime("%Y-%m-%d")
+        order_status = "Processed"
 
-        except Exception as e:
-            context.set_details(str(e))
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return order_pb2.OrderResponse()
+        self.publish_status_update(request.order_id, order_status)
+
+        return OrderResponse(
+            shipping_date=shipping_date,
+            order_status=order_status
+        )
+
+    def publish_status_update(self, order_id, status):
+        connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
+        channel = connection.channel()
+        channel.queue_declare(queue='order_status_update', durable=True)
+
+        message = {
+            "order_id": order_id,
+            "status": status
+        }
+
+        channel.basic_publish(
+            exchange='',
+            routing_key='order_status_update',
+            body=json.dumps(message)
+        )
+
+        connection.close()
+
+        logging.info(f"Published status update for order {order_id}: {status}")
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    order_pb2_grpc.add_OrderServiceServicer_to_server(OrderService(), server)
-    server.add_insecure_port('[::]:50051')
-    logging.info("gRPC Server l\u00e4uft auf Port 50051...")
+    add_OrderServiceServicer_to_server(OrderService(), server)
+    server.add_insecure_port('[::]:50052')
+    logging.info("gRPC server running on port 50052")
     server.start()
     server.wait_for_termination()
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     serve()

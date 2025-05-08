@@ -28,8 +28,10 @@ async def create_order(order: OrderCreate) -> OrderResponse:
 
         return OrderResponse(
             order_id=new_order.order_id,
+            order_date=new_order.order_date,
             delivery_date=new_order.delivery_date,
-            order_status=new_order.order_status.value
+            total_amount=new_order.quantity,
+            status=new_order.order_status.value
         )
     
 async def create_product(product: ProductCreate):
@@ -57,8 +59,10 @@ async def get_order(order_id: str) -> OrderResponse:
             return None
         return OrderResponse(
             order_id=db_order.order_id,
+            order_date=db_order.order_date,
             delivery_date=db_order.delivery_date,
-            order_status=db_order.order_status.value
+            total_amount=db_order.quantity,
+            status=db_order.order_status.value
         )
     
 async def get_all_products():
@@ -95,6 +99,6 @@ async def get_order_details(order_id: str):
         return {
             "OrderID": db_order.order_id,
             "OrderDate": db_order.order_date,
-            "TotalAmount": db_order.quantity * db_order.product.price,  # Assuming a relationship exists
+            "TotalAmount": db_order.quantity * db_order.product.price,
             "Status": db_order.order_status.value
         }
