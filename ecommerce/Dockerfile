@@ -17,4 +17,5 @@ COPY app/ app/
 EXPOSE 8000
 
 # 6. Startbefehl
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 7. Initialize the database before starting the application
+CMD ["sh", "-c", "python -c 'from app.db import init_db; import asyncio; asyncio.run(init_db())' && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
