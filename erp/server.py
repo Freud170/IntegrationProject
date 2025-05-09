@@ -1,3 +1,4 @@
+import aio_pika
 import grpc
 from concurrent import futures
 import logging
@@ -34,7 +35,7 @@ class OrderService(OrderServiceServicer):
 
         product['stock'] -= request.quantity
         shipping_date = datetime.now().strftime("%Y-%m-%d")
-        order_status = "Processed"
+        order_status = 2 # Shipped
 
         self.publish_status_update(request.order_id, order_status)
 
@@ -46,7 +47,7 @@ class OrderService(OrderServiceServicer):
     def publish_status_update(self, order_id, status):
         connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         channel = connection.channel()
-        channel.queue_declare(queue='order_status_update', durable=True)
+        channel.exchange = channel.declare_exchange("order_updates_exchange", aio_pika.ExchangeType.FANOUT, durable=True)
 
         message = {
             "order_id": order_id,

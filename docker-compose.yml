@@ -14,6 +14,11 @@ services:
     restart: unless-stopped
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Postgres Datenbank für E-Commerce
   db:
@@ -71,8 +76,10 @@ services:
       - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@crm-db:5432/crm
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
     depends_on:
-      - crm-db
-      - rabbitmq
+      crm-db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8002:8001"         # CRM API
     restart: unless-stopped
@@ -107,7 +114,8 @@ services:
     ports:
       - "8003:8002"        # Logging API
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - backend

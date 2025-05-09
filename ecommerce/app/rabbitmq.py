@@ -4,7 +4,7 @@ import aio_pika
 import asyncio
 import os
 import json
-from app.crud import update_order_status, get_order_details  # Import the missing function
+from app.crud import update_order_status, get_order_details
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 
@@ -16,12 +16,21 @@ async def publish_order_update(order_id, order_date, total_amount, status, custo
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         channel = await connection.channel()
 
+        await channel.declare_queue("order_updates", durable=True)
+
+        # Map OrderStatus enum to integer values
+        status_mapping = {
+            "Processed": 1,
+            "Shipped": 2,
+            "Cancelled": 3
+        }
+
         message = {
-            "OrderID": order_id,
-            "OrderDate": order_date,
-            "TotalAmount": total_amount,
-            "Status": status,
-            "CustomerID": customer_id
+            "order_id": order_id,
+            "order_date": order_date.isoformat(),
+            "order_amount": total_amount,
+            "order_status": status_mapping.get(status, 0),
+            "customer_id": customer_id
         }
 
         await channel.default_exchange.publish(
@@ -47,30 +56,23 @@ async def consume_order_status_updates():
             print(f" [!] RabbitMQ not ready yet ({e}), retrying in 5 seconds...")
             await asyncio.sleep(5)  # 5 Sekunden warten und nochmal versuchen
 
-    channel = await connection.channel()
-    queue = await channel.declare_queue("order_status_update", durable=True)
+    connection = await aio_pika.connect_robust(RABBITMQ_URL, timeout=None)
+    async with connection:
+        channel = await connection.channel()
 
-    print(" [*] Waiting for status updates. To exit press CTRL+C")
+        exchange = await channel.declare_exchange("order_updates_exchange", aio_pika.ExchangeType.FANOUT, durable=True)
 
-    async with queue.iterator() as queue_iter:
-        async for message in queue_iter:
+        status_queue = await channel.declare_queue("ecommerce_order_status", durable=True)
+        await status_queue.bind(exchange)
+
+        async for message in status_queue:
             async with message.process():
-                payload = message.body.decode()
-                print(f" [x] Received {payload}")
-                
                 try:
-                    order_id, new_status = payload.strip().split(",")
-                    await update_order_status(order_id, new_status)
-                    print(f" [✔] Updated order {order_id} to status {new_status}")
+                    print(f"Order update received: {message.body.decode()}")
+                    status_data = json.loads(message.body)
 
-                    # Fetch additional order details from the database
-                    order_details = await get_order_details(order_id)
-                    await publish_order_update(
-                        order_id=order_details["OrderID"],
-                        order_date=order_details["OrderDate"],
-                        total_amount=order_details["TotalAmount"],
-                        status=new_status,
-                        customer_id=order_details["CustomerID"]
-                    )
+                    await update_order_status(status_data["order_id"], status_data["status"])
+
+                    print(f"Order {status_data['OrderID']} updated successfully.")
                 except Exception as e:
-                    print(f" [!] Error processing message: {e}")
+                    print(f"Error processing order update: {e}")

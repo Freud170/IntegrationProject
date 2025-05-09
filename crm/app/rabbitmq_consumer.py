@@ -1,9 +1,10 @@
 import asyncio
 import json
+import os
 import aio_pika
 from app import crud
 
-RABBITMQ_URL = "amqp://guest:guest@rabbitmq/"
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 
 #Consumer für Bestell-Updates
 async def consume_order_updates():
@@ -30,7 +31,11 @@ async def consume_status_updates():
     connection = await aio_pika.connect_robust(RABBITMQ_URL,timeout=None)
     async with connection:
         channel = await connection.channel()
-        status_queue = await channel.declare_queue("order_status_updates", durable=True)
+
+        exchange = await channel.declare_exchange("order_updates_exchange", aio_pika.ExchangeType.FANOUT, durable=True)
+
+        status_queue = await channel.declare_queue("crm_order_status", durable=True)
+        await status_queue.bind(exchange)
 
         async for message in status_queue:
             async with message.process():
