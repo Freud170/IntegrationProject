@@ -15,7 +15,7 @@ services:
     networks:
       - backend
 
-  # Postgres Datenbank für Ecommerce
+  # Postgres Datenbank für E-Commerce
   db:
     image: postgres:14
     container_name: postgres-db
@@ -32,7 +32,7 @@ services:
     networks:
       - backend
 
-  # Ecommerce Service
+  # E-Commerce Service
   ecommerce:
     build: ./ecommerce
     container_name: ecommerce-service
@@ -40,10 +40,10 @@ services:
       - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@db:5432/ecommerce
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
     depends_on:
-      - rabbitmq
       - db
+      - rabbitmq
     ports:
-      - "8000:8000"        # Ecommerce API
+      - "8000:8000"        # E-Commerce API
     restart: unless-stopped
     networks:
       - backend
@@ -57,8 +57,41 @@ services:
     depends_on:
       - rabbitmq
     ports:
-      - "8001:8000"        # ERP API
+      - "8001:50052"        # ERP gRPC-Server
       - "50052:50052"
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # CRM Service
+  crm:
+    build: ./crm
+    container_name: crm-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@crm-db:5432/crm
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    depends_on:
+      - crm-db
+      - rabbitmq
+    ports:
+      - "8002:8001"         # CRM API
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # CRM Datenbank
+  crm-db:
+    image: postgres:14
+    container_name: crm-db
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"         # CRM DB Zugriff
+    volumes:
+      - crm_postgres_data:/var/lib/postgresql/data
+      - ./crm/init-scripts:/docker-entrypoint-initdb.d
     restart: unless-stopped
     networks:
       - backend
@@ -72,7 +105,7 @@ services:
     volumes:
       - ./logging/logs:/app/logs
     ports:
-      - "8002:8002"        # Logging API
+      - "8003:8002"        # Logging API
     depends_on:
       - rabbitmq
     restart: unless-stopped
@@ -85,3 +118,4 @@ networks:
 
 volumes:
   postgres_data:
+  crm_postgres_data:
