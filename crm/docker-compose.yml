@@ -54,7 +54,3 @@ services:
       - db
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-
-volumes:
-  crm_postgres_data:
-  pgadmin_data:

@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  # RabbitMQ Container
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"        # RabbitMQ AMQP Port
+      - "15672:15672"      # RabbitMQ Management UI Port (http://localhost:15672)
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # Postgres Datenbank für Ecommerce
+  db:
+    image: postgres:14
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./ecommerce/init-scripts:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # Ecommerce Service
+  ecommerce:
+    build: ./ecommerce
+    container_name: ecommerce-service
+    environment:
+      - POSTGRES_URL=postgresql+asyncpg://postgres:postgres@db:5432/ecommerce
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    depends_on:
+      - rabbitmq
+      - db
+    ports:
+      - "8000:8000"        # Ecommerce API
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # ERP Service
+  erp:
+    build: ./erp
+    container_name: erp-service
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    depends_on:
+      - rabbitmq
+    ports:
+      - "8001:8000"        # ERP API
+      - "50052:50052"
+    restart: unless-stopped
+    networks:
+      - backend
+
+  # Logging Service
+  logging:
+    build: ./logging
+    container_name: logging-service
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq/
+    volumes:
+      - ./logging/logs:/app/logs
+    ports:
+      - "8002:8002"        # Logging API
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:

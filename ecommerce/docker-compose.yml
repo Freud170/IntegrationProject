@@ -11,28 +11,29 @@ services:
       - db
       - rabbitmq
     ports:
-      - "8000:8000"  # FastAPI läuft auf localhost:8000
+      - "8000:8000"
     restart: unless-stopped
 
   db:
     image: postgres:14
     container_name: postgres-db
     environment:
-      POSTGRES_DB: ecommerce
+      POSTGRES_DB: common_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
     restart: unless-stopped
 
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"      # RabbitMQ Hauptport
-      - "15672:15672"    # RabbitMQ Management UI (http://localhost:15672, user: guest/guest)
+      - "5672:5672"
+      - "15672:15672"
     restart: unless-stopped
 
 volumes:
