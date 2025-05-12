@@ -3,6 +3,7 @@ import asyncio
 import logging
 from typing import Optional, Dict, Any
 import aio_pika
+from aio_pika import ExchangeType
 from .logger import async_logger
 
 class LoggingRabbitMQConsumer:
@@ -24,6 +25,8 @@ class LoggingRabbitMQConsumer:
         self._stopping = False
         self._reconnect_delay = 5.0  # Verzögerung in Sekunden vor dem Wiederverbinden
         self._logger = logging.getLogger("logging_service.rabbitmq")
+        self.exchange = None
+        self.queue = None
     
     async def connect(self) -> None:
         """Stellt eine Verbindung zu RabbitMQ her."""
@@ -48,11 +51,17 @@ class LoggingRabbitMQConsumer:
         """Richtet die Warteschlangen für das Logging ein."""
         await self._ready.wait()
         
-        # Warteschlange für System-Interaktionslogs
-        await self.channel.declare_queue(
-            "system_interactions_logs",
+        # Declare fanout exchange and bind a durable queue for order updates
+        self.exchange = await self.channel.declare_exchange(
+            "order_updates_exchange",
+            ExchangeType.FANOUT,
             durable=True
         )
+        self.queue = await self.channel.declare_queue(
+            "order_updates_logs",
+            durable=True
+        )
+        await self.queue.bind(self.exchange)
     
     async def consume_logs(self) -> None:
         """
@@ -60,11 +69,8 @@ class LoggingRabbitMQConsumer:
         """
         await self._ready.wait()
         
-        # Queue für System-Interaktionen deklarieren
-        queue = await self.channel.declare_queue(
-            "system_interactions_logs",
-            durable=True
-        )
+        # Consume from the bound order updates queue
+        queue = self.queue
         
         async def process_message(message: aio_pika.IncomingMessage) -> None:
             """
