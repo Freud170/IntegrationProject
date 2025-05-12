@@ -85,6 +85,12 @@ def serve():
     server.add_insecure_port('[::]:50052')
     logging.info("gRPC server running on port 50052")
     server.start()
+    # Graceful shutdown on SIGTERM
+    import signal
+    def _sigterm_handler(signum, frame):
+        logging.info("SIGTERM received, stopping gRPC server...")
+        server.stop(0)
+    signal.signal(signal.SIGTERM, _sigterm_handler)
     server.wait_for_termination()
 
 if __name__ == "__main__":
