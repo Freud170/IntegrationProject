@@ -11,7 +11,8 @@ import json
 # Add the protos directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'protos'))
 
-from protos.order_pb2 import OrderResponse
+from protos.order_pb2 import OrderResponse, OrderStatusUpdateRequest
+from google.protobuf.empty_pb2 import Empty
 from protos.order_pb2_grpc import OrderServiceServicer, add_OrderServiceServicer_to_server
 
 class OrderService(OrderServiceServicer):
@@ -47,22 +48,36 @@ class OrderService(OrderServiceServicer):
     def publish_status_update(self, order_id, status):
         connection = pika.BlockingConnection(pika.ConnectionParameters('rabbitmq'))
         channel = connection.channel()
-        channel.exchange = channel.declare_exchange("order_updates_exchange", aio_pika.ExchangeType.FANOUT, durable=True)
+        # declare fanout exchange for order status updates
+        channel.exchange_declare(exchange='order_updates_exchange', exchange_type='fanout', durable=True)
 
         message = {
             "order_id": order_id,
             "status": status
         }
 
+        # publish to the exchange with empty routing key for fanout
         channel.basic_publish(
-            exchange='',
-            routing_key='order_status_update',
+            exchange='order_updates_exchange',
+            routing_key='',
             body=json.dumps(message)
         )
 
         connection.close()
 
         logging.info(f"Published status update for order {order_id}: {status}")
+
+    def UpdateOrderStatus(self, request: OrderStatusUpdateRequest, context) -> Empty:
+        """
+        Receives order status updates via gRPC and publishes to RabbitMQ exchange.
+        """
+        try:
+            self.publish_status_update(request.order_id, request.status)
+            return Empty()
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return Empty()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

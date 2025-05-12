@@ -22,19 +22,22 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
+from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0border.proto\x12\x03\x65rp\"F\n\x0cOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x12\n\nproduct_id\x18\x02 \x01(\t\x12\x10\n\x08quantity\x18\x03 \x01(\x05\"<\n\rOrderResponse\x12\x15\n\rshipping_date\x18\x01 \x01(\t\x12\x14\n\x0corder_status\x18\x02 \x01(\t2E\n\x0cOrderService\x12\x35\n\x0cProcessOrder\x12\x11.erp.OrderRequest\x1a\x12.erp.OrderResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0border.proto\x12\x03\x65rp\x1a\x1bgoogle/protobuf/empty.proto\"F\n\x0cOrderRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x12\n\nproduct_id\x18\x02 \x01(\t\x12\x10\n\x08quantity\x18\x03 \x01(\x05\"<\n\rOrderResponse\x12\x15\n\rshipping_date\x18\x01 \x01(\t\x12\x14\n\x0corder_status\x18\x02 \x01(\t\"<\n\x18OrderStatusUpdateRequest\x12\x10\n\x08order_id\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\x05\x32\x91\x01\n\x0cOrderService\x12\x35\n\x0cProcessOrder\x12\x11.erp.OrderRequest\x1a\x12.erp.OrderResponse\x12J\n\x11UpdateOrderStatus\x12\x1d.erp.OrderStatusUpdateRequest\x1a\x16.google.protobuf.Emptyb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'order_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ORDERREQUEST']._serialized_start=20
-  _globals['_ORDERREQUEST']._serialized_end=90
-  _globals['_ORDERRESPONSE']._serialized_start=92
-  _globals['_ORDERRESPONSE']._serialized_end=152
-  _globals['_ORDERSERVICE']._serialized_start=154
-  _globals['_ORDERSERVICE']._serialized_end=223
+  _globals['_ORDERREQUEST']._serialized_start=49
+  _globals['_ORDERREQUEST']._serialized_end=119
+  _globals['_ORDERRESPONSE']._serialized_start=121
+  _globals['_ORDERRESPONSE']._serialized_end=181
+  _globals['_ORDERSTATUSUPDATEREQUEST']._serialized_start=183
+  _globals['_ORDERSTATUSUPDATEREQUEST']._serialized_end=243
+  _globals['_ORDERSERVICE']._serialized_start=246
+  _globals['_ORDERSERVICE']._serialized_end=391
 # @@protoc_insertion_point(module_scope)

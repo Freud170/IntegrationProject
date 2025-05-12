@@ -76,14 +76,25 @@ async def get_all_products():
         products = result.scalars().all()
         return products
 
-async def update_order_status(order_id: str, new_status: str):
+async def update_order_status(order_id: str, new_status: int):
     """
     Aktualisiert den Lieferstatus einer Bestellung.
     """
+    status_mapping = {
+        1: OrderStatus.Processed,
+        2: OrderStatus.Shipped,
+        3: OrderStatus.Cancelled
+    }
+    try:
+        enum_status = status_mapping.get(int(new_status))
+    except (ValueError, TypeError):
+        return
+    if enum_status is None:
+        return
     async with async_session() as session:
         db_order = await session.get(Order, order_id)
         if db_order:
-            db_order.order_status = OrderStatus(new_status)
+            db_order.order_status = enum_status
             await session.commit()
 
 async def get_order_details(order_id: str):
