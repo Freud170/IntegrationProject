@@ -77,7 +77,7 @@ class SystemInteractionLogger:
                     body=json.dumps(log_entry).encode('utf-8'),
                     delivery_mode=aio_pika.DeliveryMode.PERSISTENT
                 ),
-                routing_key=""
+                routing_key="logging_events"
             )
             return True
         except Exception as e:

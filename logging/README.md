@@ -23,7 +23,7 @@ Der Logging-Service protokolliert alle Interaktionen zwischen den Systemen (eCom
 
 ## Verzeichnisstruktur
 
-```
+```txt
 logging/
   ├── app/                     # Hauptanwendungscode
   │   ├── api.py               # REST API Endpunkte
