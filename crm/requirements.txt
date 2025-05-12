@@ -7,3 +7,4 @@ pika
 pydantic
 python-dotenv
 email-validator
+requests

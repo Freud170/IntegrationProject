@@ -5,6 +5,13 @@ import asyncio
 import os
 import json
 from app.crud import update_order_status, get_order_details
+from aio_pika import ExchangeType
+
+# import central logging client
+from app.log_client import SystemInteractionLogger
+
+# instantiate logger
+log_client = SystemInteractionLogger(service_name="ecommerce")
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 
@@ -16,9 +23,12 @@ async def publish_order_update(order_id, order_date, total_amount, status, custo
         connection = await aio_pika.connect_robust(RABBITMQ_URL)
         channel = await connection.channel()
 
-        await channel.declare_queue("order_updates", durable=True)
+        exchange = await channel.declare_exchange(
+            "order_updates_exchange",
+            ExchangeType.FANOUT,
+            durable=True
+        )
 
-        # Map OrderStatus enum to integer values
         status_mapping = {
             "Processed": 1,
             "Shipped": 2,
@@ -33,14 +43,28 @@ async def publish_order_update(order_id, order_date, total_amount, status, custo
             "customer_id": customer_id
         }
 
-        await channel.default_exchange.publish(
+        await exchange.publish(
             aio_pika.Message(body=json.dumps(message).encode()),
-            routing_key="order_updates"
+            routing_key=""
         )
         print(f" [✔] Published order update: {message}")
+        # emit a log event for publish
+        await log_client.log_interaction(
+            target_system="order_updates_exchange",
+            interaction_type="publish_order_update",
+            message=message,
+            status="SUCCESS"
+        )
         await connection.close()
     except Exception as e:
         print(f" [!] Error publishing order update: {e}")
+        # log error
+        await log_client.log_interaction(
+            target_system="order_updates_exchange",
+            interaction_type="publish_order_update",
+            message={"error": str(e)},
+            status="ERROR"
+        )
 
 async def consume_order_status_updates():
     """
@@ -74,5 +98,12 @@ async def consume_order_status_updates():
                     await update_order_status(status_data["order_id"], status_data["status"])
 
                     print(f"Order {status_data['OrderID']} updated successfully.")
+                    # emit a log event for consume
+                    await log_client.log_interaction(
+                        target_system="order_updates_exchange",
+                        interaction_type="consume_status_update",
+                        message=status_data,
+                        status="SUCCESS"
+                    )
                 except Exception as e:
                     print(f"Error processing order update: {e}")

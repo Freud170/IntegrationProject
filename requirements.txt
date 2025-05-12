@@ -10,3 +10,4 @@ pydantic
 pydantic[email]
 python-dotenv
 email-validator
+requests

@@ -51,14 +51,14 @@ class LoggingRabbitMQConsumer:
         """Richtet die Warteschlangen für das Logging ein."""
         await self._ready.wait()
         
-        # Declare fanout exchange and bind a durable queue for order updates
+        # Declare fanout exchange for logging events and bind a durable queue
         self.exchange = await self.channel.declare_exchange(
-            "order_updates_exchange",
+            "logging_exchange",
             ExchangeType.FANOUT,
             durable=True
         )
         self.queue = await self.channel.declare_queue(
-            "order_updates_logs",
+            "logging_events",
             durable=True
         )
         await self.queue.bind(self.exchange)
@@ -69,7 +69,7 @@ class LoggingRabbitMQConsumer:
         """
         await self._ready.wait()
         
-        # Consume from the bound order updates queue
+        # Consume log envelope events
         queue = self.queue
         
         async def process_message(message: aio_pika.IncomingMessage) -> None:
@@ -80,32 +80,21 @@ class LoggingRabbitMQConsumer:
             """
             async with message.process():
                 try:
+                    # Each message is already a log envelope
                     body = message.body.decode('utf-8')
                     log_data = json.loads(body)
-                    
-                    # Extrahieren der relevanten Felder
-                    source_system = log_data.get('source_system', 'unknown')
-                    target_system = log_data.get('target_system', 'unknown')
-                    interaction_type = log_data.get('interaction_type', 'unknown')
-                    message_content = log_data.get('message', {})
-                    status = log_data.get('status', 'SUCCESS')
-                    error_message = log_data.get('error_message')
-                    
-                    # Asynchron protokollieren
+                    # Forward into file-based async_logger
                     await async_logger.log_interaction(
-                        source_system=source_system,
-                        target_system=target_system,
-                        interaction_type=interaction_type,
-                        message=message_content,
-                        status=status,
-                        error_message=error_message
+                        source_system=log_data.get('source_system', 'unknown'),
+                        target_system=log_data.get('target_system', 'unknown'),
+                        interaction_type=log_data.get('interaction_type', 'unknown'),
+                        message=log_data.get('payload', {}),
+                        status=log_data.get('status', 'SUCCESS'),
+                        error_message=log_data.get('error_message')
                     )
-                    
-                    self._logger.debug(f"Nachricht protokolliert: {source_system} -> {target_system}")
-                except json.JSONDecodeError:
-                    self._logger.error("Fehler beim Dekodieren der JSON-Nachricht")
+                    self._logger.debug(f"Logged event: {log_data.get('source_system')} -> {log_data.get('target_system')}")
                 except Exception as e:
-                    self._logger.error(f"Fehler bei der Verarbeitung der Nachricht: {str(e)}")
+                    self._logger.error(f"Error processing log envelope: {e}")
         
         # Nachrichten asynchron verarbeiten
         await queue.consume(process_message)

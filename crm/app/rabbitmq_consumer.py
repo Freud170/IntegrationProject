@@ -2,29 +2,49 @@ import asyncio
 import json
 import os
 import aio_pika
+from aio_pika import ExchangeType
+# import local log_client
+from app.log_client import SystemInteractionLogger
 from app import crud
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
 
-#Consumer für Bestell-Updates
+# instantiate logger client
+log_client = SystemInteractionLogger(service_name="crm")
+
 async def consume_order_updates():
     connection = await aio_pika.connect_robust(RABBITMQ_URL, timeout=None)
     async with connection:
         channel = await connection.channel()
-        order_queue = await channel.declare_queue("order_updates", durable=True)
+        exchange = await channel.declare_exchange(
+            "order_updates_exchange",
+            ExchangeType.FANOUT,
+            durable=True
+        )
+        # Eigene CRM-Queue deklarieren und an Exchange binden
+        order_queue = await channel.declare_queue("crm_order_updates", durable=True)
+        await order_queue.bind(exchange)
 
+        # Nachrichten aus der gebundenen Queue verarbeiten
         async for message in order_queue:
             async with message.process():
                 try:
-                    print(f" Bestellung Empfangen: {message.body.decode()}")
+                    print(f"Bestellung Empfangen: {message.body.decode()}")
                     order_data = json.loads(message.body)
 
                     # Bestellung in der Datenbank hinzufügen
                     await crud.create_customer_order(order_data)
 
-                    print(f" Bestellung wurde Kunde zugewiesen {order_data['customer_id']}")
+                    print(f"Bestellung wurde Kunde zugewiesen {order_data['customer_id']}")
+                    # emit log event for consume
+                    await log_client.log_interaction(
+                        target_system="order_updates_exchange",
+                        interaction_type="consume_order_update",
+                        message=order_data,
+                        status="SUCCESS"
+                    )
                 except Exception as e:
-                    print(f" Fehler bei der Bearbeirung {e}")
+                    print(f"Fehler bei der Bearbeitung {e}")
 
 #Consumer für Status-Updates
 async def consume_status_updates():
@@ -47,6 +67,13 @@ async def consume_status_updates():
                     await crud.update_order_status(status_data["order_id"], status_data["status"])
 
                     print(f" Status Update erfolgreich: {status_data['order_id']}")
+                    # emit log event for status consume
+                    await log_client.log_interaction(
+                        target_system="order_updates_exchange",
+                        interaction_type="consume_status_update",
+                        message=status_data,
+                        status="SUCCESS"
+                    )
                 except Exception as e:
                     print(f" Fehler: {e}")
 
